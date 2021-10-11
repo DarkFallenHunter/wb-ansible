@@ -1,0 +1,10 @@
+---
+- name: Restart mosquitto
+  hosts: wbsb, wbsv
+
+  tasks:
+    - name: Restart mosquitto
+      systemd:
+        name: mosquitto
+        state: restarted
+

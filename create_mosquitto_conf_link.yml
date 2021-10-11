@@ -1,0 +1,56 @@
+---
+- name: Creating symlink to mosquitto configuration
+  hosts: wbtest, wbsv, wbsb
+
+  vars:
+    username: "user"
+    userpass: "123123"
+    mq_sys_conf_path: "/etc/mosquitto/mosquitto.conf"
+    mq_conf_path: "/home/{{ username }}/mosquitto.conf"
+
+
+  tasks:
+    - name: Create user
+      user:
+        name: "{{ username }}"
+        password: "{{ userpass | password_hash('sha512') }}"
+        create_home: yes
+        shell: /bin/bash
+
+    - name: Get mosquitto conf state
+      stat:
+        path: "{{ mq_sys_conf_path }}"
+      register: mq_conf_stat
+
+    - name: Print a debug message
+      ansible.builtin.debug:
+        msg: "{{ mq_conf_stat }}"
+
+    - name: Move mosquitto conf
+      command: "mv {{ mq_sys_conf_path }} {{ mq_conf_path }}"
+      when: mq_conf_stat.stat.exists and mq_conf_stat.stat.isreg
+
+    - name: Copy mosquitto conf from local if not exists
+      copy:
+        src: mosquitto/mosquitto.conf
+        dest: "{{ mq_conf_path }}"
+      # when: not mq_conf_stat.stat.exists
+      notify: Restart mosquitto
+
+    - name: Create symlink
+      file:
+        path: "{{ mq_sys_conf_path }}"
+        src: "{{ mq_conf_path }}"
+        state: link
+
+    - name: Change conf owner
+      file:
+        path: "{{ mq_conf_path }}"
+        owner: "{{ username }}"
+
+
+  handlers:
+    - name: Restart mosquitto
+      systemd:
+        name: mosquitto
+        state: restarted

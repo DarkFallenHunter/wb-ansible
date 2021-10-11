@@ -1,0 +1,17 @@
+---
+- name: Change network config
+  hosts: wbsb, wbsv
+
+  vars:
+    interface: "wlan0"
+
+  tasks:
+    - name: Copy interfaces file
+      copy:
+        src: "configs/interfaces"
+        dest: "/etc/network/"
+      notify: "Restart interface"
+
+  handlers:
+    - name: Restart interface
+      shell: "ifdown {{ interface }} && ifup {{ interface }}"

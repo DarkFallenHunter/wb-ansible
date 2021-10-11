@@ -1,0 +1,23 @@
+---
+- name: "Set default rules to wb"
+  hosts: wbsb, wbsv, wbtest
+  become: yes
+
+  tasks:
+    - name: Finding rules files...
+      find:
+        paths: ["/etc/wb-rules/",]
+        patterns: ["*.js",]
+        use_regex: false
+      register: deleting_rules
+
+    - name: Deleting rules...
+      file:
+        path: "{{ item.path }}"
+        state: absent
+      with_items: "{{ deleting_rules.files }}"
+
+    - name: Copy default rules
+      copy:
+        src: rules/
+        dest: /etc/wb-rules

@@ -1,0 +1,22 @@
+---
+- name: Set default mosquitto config
+  hosts: wbsb, wbsv
+
+  vars:
+    username: "user"
+    mq_conf_path: "/home/{{ username }}/mosquitto.conf"
+
+
+  tasks:
+    - name: Copy mosquitto conf from local
+      copy:
+        src: mosquitto/mosquitto.conf
+        dest: "{{ mq_conf_path }}"
+      notify: Restart mosquitto
+
+
+  handlers:
+    - name: Restart mosquitto
+      systemd:
+        name: mosquitto
+        state: restarted
